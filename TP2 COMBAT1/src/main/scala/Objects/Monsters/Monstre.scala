@@ -1,4 +1,5 @@
 import java.awt.Point
+import scala.math.pow
 
 import scala.util.Random
 
@@ -6,8 +7,8 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
 
 
   val name = nameVal;
-  val rayonAction = 5;
-  val hp= 0
+  var hp= 0
+  var speed = 0;
   val armor= 0;
   val faction = fc
   var alive = true;
@@ -20,22 +21,22 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
   var closestAlly: Monstre = null;
 
   def attaque(monstre:  Monstre): Monstre = {
-    System.out.println(name + " attaque");
+    System.out.println(name + " attaque")
 
-    return monstre;
+    return monstre
   }
 
   def prendreDegats(): Unit = {
-    System.out.println(name + " a recu des degats");
+    System.out.println(name + " a recu des degats")
   }
 
-  def generateRandomPosition(): Array[Integer] = {
+  def generateRandomPosition(): Array[Int] = {
 
-    var rd = new Random();
-    var res = new Array[Integer](2);
-    res(0) = rd.nextInt(100);
-    res(1) = rd.nextInt(100);
-    res;
+    var rd = new Random()
+    var res = new Array[Int](2)
+    res(0) = rd.nextInt(100)
+    res(1) = rd.nextInt(100)
+    res
   }
 
   /*override def toString():String=
@@ -45,7 +46,7 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
 
   def intelligence(): (Monstre, String) = {
     var res: (Monstre, String) = null;
-      if (closestAlly != null && closestAlly.hit > 0 && healingPotions > 0) {
+      /*if (closestAlly != null && closestAlly.hit > 0 && healingPotions > 0) {
           var a = new Point(position(0), position(1));
           var b = new Point(closestFoe.position(0), closestFoe.position(1));
           var distance = a.distance(b);
@@ -53,9 +54,10 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
              return (this, heal());
           }
           else {
-            return (this, moveToHeal());
+            return (this, move(// mettre le monstre vers lequel on se deplace));
           }
-      }
+      }*/
+
       else if (closestFoe != null) {
         var a = new Point(position(0), position(1));
         var b = new Point(closestFoe.position(0), closestFoe.position(1));
@@ -64,7 +66,7 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
           return (this, attack());
         }
         else {
-          return (this, moveToAttack());
+          return (this, move(// mettre le monstre vers lequel on se deplace));
         }
       }
     else
@@ -75,12 +77,24 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
     return ("attack");
   }
 
-  def moveToAttack(): String = {
-    return "moveToAttack";
-  }
+  def move(p: Monstre): Unit = {
+    val d = calculateDistance(p)
 
-  def moveToHeal(): String = {
-    return "moveToHeal";
+    val cosTeta = (p.position(0) - position(0)) / d
+    val sinTeta = (p.position(1) - position(1)) / d
+
+    if (d - speed < 5) {
+      val newSpeed = d - 5
+      position(0) += newSpeed * cosTeta
+      position(1) += newSpeed * sinTeta
+
+    } else {
+      position(0) += speed * cosTeta
+      position(1) += speed * sinTeta
+    }
+  }
+  def calculateDistance(m: Monstre): Long = {
+    pow(pow(position(0) - m.position(0), 2) + pow(position(1) - m.position(1), 2), 0.5).toLong
   }
 
   def heal(): String = {
@@ -98,13 +112,6 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
     }
   }
 
-  def moveTowards(newPos: Array[Integer]): Unit = {
-    position = newPos;
-   /* var dx=(Double)(newPos(0)-position(0));
-    var dy=(Double)(newPos(1)-position(1));
-    var angle=Math.atan2(dx,dy);*/
-
-  }
 
   def beHealed(): Unit = {
     hit -= 1;
