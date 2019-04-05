@@ -9,66 +9,66 @@ import scala.collection.mutable.ListBuffer
 class Program extends Serializable {
 
   def run(): Unit = {
-    val conf = new SparkConf().setMaster("local").setAppName("combat");
-    val sc = new SparkContext(conf);
-    sc.setLogLevel("WARN");
-    var monsters = init();
-    var boucle = true;
-    var i=1;
+    val conf = new SparkConf().setMaster("local").setAppName("combat")
+    val sc = new SparkContext(conf)
+    sc.setLogLevel("WARN")
+    var monsters = init()
+    var boucle = true
+    var i=1
     while (boucle) {
       Console.println("Tour "+i)
-      val monstersRDD = sc.parallelize(monsters);
-      val positions = monstersRDD.flatMap(m => sendPositions(m, monsters)).groupByKey().map(findClosest).collect();
-      val monstersRDD2 = monstersRDD.map(m => initializeGraph(m, positions));
-      var a=monstersRDD2.collect();
-      val messages = monstersRDD2.flatMap(m => sendMessages(m)).groupByKey();
+      val monstersRDD = sc.parallelize(monsters)
+      val positions = monstersRDD.flatMap(m => sendPositions(m, monsters)).groupByKey().map(findClosest).collect()
+      val monstersRDD2 = monstersRDD.map(m => initializeGraph(m, positions))
+      var a=monstersRDD2.collect()
+      val messages = monstersRDD2.flatMap(m => sendMessages(m)).groupByKey()
       if (messages.count() == 0)
-        boucle = false;
+        boucle = false
       else {
-        val newMonsters = messages.map(mess => processMessages(mess)).collect();
-        val monstersRDD3 = monstersRDD2.flatMap((m => updateGraph(m, newMonsters.toList)));
-        monsters = monstersRDD3.collect().toList;
-        i+=1;
-        var a = 0;
+        val newMonsters = messages.map(mess => processMessages(mess)).collect()
+        val monstersRDD3 = monstersRDD2.flatMap((m => updateGraph(m, newMonsters.toList)))
+        monsters = monstersRDD3.collect().toList
+        i+=1
+        var a = 0
       }
 
     }
 
-    Console.println("Combat terminé");
-    Console.println("Vainqueur: "+monsters(0).name);
+    Console.println("Combat terminé")
+    Console.println("Vainqueur: "+monsters(0).name)
 
-    var b = 0;
+    var b = 0
   }
 
 
   def initializeGraph(monstre: Monstre, positions: Array[(Monstre, (Monstre,Monstre))]): Monstre = {
     for (i <- 0 until positions.size) {
       if (monstre.name.equals(positions(i)._1.name)) {
-        monstre.closestFoe = positions(i)._2._1;
-        monstre.closestAlly=positions(i)._2._2;
+        monstre.closestFoe = positions(i)._2._1
+        monstre.closestAlly=positions(i)._2._2
       }
     }
     if(positions.size==0)
       {
-        monstre.closestFoe=null;
-        monstre.closestAlly=null;
+        monstre.closestFoe=null
+        monstre.closestAlly=null
       }
-    monstre;
+    monstre
   }
 
   def sendPositions(monstre: Monstre, monstres: List[Monstre]): List[(Monstre, Monstre)] = {
-    var result = new ListBuffer[(Monstre, Monstre)];
+    var result = new ListBuffer[(Monstre, Monstre)]
     for (m <- monstres) {
       if (!m.name.equals(monstre.name)) {
-        result.append((m, monstre));
+        result.append((m, monstre))
       }
     }
-    var a=result.toList;
-    a;
+    var a=result.toList
+    a
   }
 
   def findClosest(item: (Monstre, Iterable[Monstre])): (Monstre, (Monstre,Monstre)) = {
-    val monsters = item._2.toList;
+    val monsters = item._2.toList
     var closestFoe:Monstre=null;
     var closestAlly:Monstre=null;
     var distanceFoe = 1000000000.0;

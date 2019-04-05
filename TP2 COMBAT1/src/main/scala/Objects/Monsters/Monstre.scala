@@ -6,9 +6,9 @@ import scala.util.Random
 class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Serializable {
 
 
-  val name = nameVal;
+  val name = nameVal
   var hp= 0
-  var speed = 0;
+  var speed = 0
   val armor= 0;
   val faction = fc
   var alive = true;
@@ -45,7 +45,7 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
   }*/
 
   def intelligence(): (Monstre, String) = {
-    var res: (Monstre, String) = null;
+    var res: (Monstre, String) = null
       /*if (closestAlly != null && closestAlly.hit > 0 && healingPotions > 0) {
           var a = new Point(position(0), position(1));
           var b = new Point(closestFoe.position(0), closestFoe.position(1));
@@ -58,26 +58,28 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
           }
       }*/
 
-      else if (closestFoe != null) {
-        var a = new Point(position(0), position(1));
-        var b = new Point(closestFoe.position(0), closestFoe.position(1));
-        var distance = a.distance(b);
+      if (closestFoe != null) {
+        var a = new Point(position(0), position(1))
+        var b = new Point(closestFoe.position(0), closestFoe.position(1))
+        var distance = a.distance(b)
         if (distance < rayonAction) {
-          return (this, attack());
+          return (this, "attack",closestFoe)
         }
         else {
-          return (this, move(// mettre le monstre vers lequel on se deplace));
+          return (this, "move",closestFoe)
         }
       }
     else
-        return (this,noAction())
+        return (this,noAction(),null)
   }
 
-  def attack(): String = {
-    return ("attack");
+  def attack(m: Monstre):  Monstre = {
+
+    //choisir arme et attaquer
+    return m
   }
 
-  def move(p: Monstre): Unit = {
+  def move(p: Monstre): Monstre = {
     val d = calculateDistance(p)
 
     val cosTeta = (p.position(0) - position(0)) / d
@@ -92,32 +94,27 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
       position(0) += speed * cosTeta
       position(1) += speed * sinTeta
     }
+    this
   }
   def calculateDistance(m: Monstre): Long = {
     pow(pow(position(0) - m.position(0), 2) + pow(position(1) - m.position(1), 2), 0.5).toLong
   }
 
   def heal(): String = {
-    return "heal";
+    return "heal"
   }
 
   def noAction(): String = {
-    return "noAction";
+    return "noAction"
   }
 
-  def takeHit(): Unit = {
-    hit += 1;
-    if (hit == seuil) {
-      alive = false;
-    }
-  }
 
 
   def beHealed(): Unit = {
-    hit -= 1;
+    hit -= 1
   }
 
   def consumePotion(): Unit = {
-    healingPotions -= 1;
+    healingPotions -= 1
   }
 }
