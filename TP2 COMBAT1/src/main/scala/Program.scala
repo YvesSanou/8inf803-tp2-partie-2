@@ -140,7 +140,7 @@ class Program extends Serializable {
             target = monstre.closestAlly;
             text=" se deplace vers l'allié "
           }
-          monstre.moveTo(target.position);
+          //monstre.moveTo(target.position);
           Console.println(monstre.name + text + m._2);
         }
         case "heal" => {
@@ -172,19 +172,19 @@ class Program extends Serializable {
     var pos = new Array[Integer](2);
     pos(0) = 10;
     pos(1) = 5;
-    val m1 = new Monstre("m1", pos.clone(),1);
+    val m1 = new Monstre("m1",1,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
     pos(0) = 0;
     pos(1) = 5;
-    val m2 = new Monstre("m2", pos.clone(),1);
+    val m2 = new Monstre("m2",1,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
     pos(0) = 0;
     pos(1) = 10;
-    val m3 = new Monstre("m3", pos.clone(),2);
+    val m3 = new Monstre("m3",2,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
     pos(0) = 20;
     pos(1) = 10;
-    val m4 = new Monstre("m4", pos.clone(),2);
+    val m4 = new Monstre("m4",2,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
     pos(0) = 20;
     pos(1) = 15;
-    val m5 = new Monstre("m5", pos.clone(),2);
+    val m5 = new Monstre("m5",2,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
     val result = Array(m1, m2, m3,m4,m5);
     result.toList;
   }

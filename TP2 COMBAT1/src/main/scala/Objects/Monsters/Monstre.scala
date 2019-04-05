@@ -2,23 +2,27 @@ import java.awt.Point
 
 import scala.util.Random
 
-class Monstre(nameVal: String, pos: Array[Integer], fc: Integer) extends Serializable {
+class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Serializable {
 
 
   val name = nameVal;
   val rayonAction = 5;
+  val hp= 0
+  val armor= 0;
   val faction = fc
   var alive = true;
   val seuil = 5;
   var hit = 0;
+  var attackslist = attacks
   var healingPotions = 2;
-  //var position=generateRandomPosition();
-  var position = pos;
+  var position=generateRandomPosition();
   var closestFoe: Monstre = null;
   var closestAlly: Monstre = null;
 
-  def attaque(): Unit = {
+  def attaque(monstre:  Monstre): Monstre = {
     System.out.println(name + " attaque");
+
+    return monstre;
   }
 
   def prendreDegats(): Unit = {
