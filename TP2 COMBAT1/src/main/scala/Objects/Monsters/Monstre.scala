@@ -1,6 +1,7 @@
 import java.awt.Point
-import scala.math.pow
+import java.lang.Integer
 
+import scala.math.pow
 import scala.util.Random
 
 class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Serializable {
@@ -30,12 +31,14 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
     System.out.println(name + " a recu des degats")
   }
 
-  def generateRandomPosition(): Array[Int] = {
+  def generateRandomPosition(): Array[Double] = {
 
+    val min=0;
+    val max=100;
     var rd = new Random()
-    var res = new Array[Int](2)
-    res(0) = rd.nextInt(100)
-    res(1) = rd.nextInt(100)
+    var res = new Array[Double](2)
+    res(0) = rd.nextDouble()*(max-min)+min;
+    res(1) = rd.nextDouble()*(max-min)+min;
     res
   }
 
@@ -58,7 +61,7 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
           }
       }*/
 
-      if (closestFoe != null) {
+      /*if (closestFoe != null) {
         var a = new Point(position(0), position(1))
         var b = new Point(closestFoe.position(0), closestFoe.position(1))
         var distance = a.distance(b)
@@ -70,7 +73,8 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
         }
       }
     else
-        return (this,noAction(),null)
+        return (this,noAction(),null)*/
+    return(this,heal());
   }
 
   def attack(m: Monstre):  Monstre = {
@@ -87,17 +91,17 @@ class Monstre(nameVal: String, fc: Integer, attacks: Array[Attaque]) extends Ser
 
     if (d - speed < 5) {
       val newSpeed = d - 5
-      position(0) += newSpeed * cosTeta
-      position(1) += newSpeed * sinTeta
+      position(0) += (newSpeed * cosTeta);
+      position(1) += (newSpeed * sinTeta);
 
     } else {
-      position(0) += speed * cosTeta
-      position(1) += speed * sinTeta
+      position(0) += speed * cosTeta;
+      position(1) += speed * sinTeta;
     }
     this
   }
-  def calculateDistance(m: Monstre): Long = {
-    pow(pow(position(0) - m.position(0), 2) + pow(position(1) - m.position(1), 2), 0.5).toLong
+  def calculateDistance(m: Monstre): Double = {
+    return  Math.sqrt(Math.pow(m.position(0)-this.position(0),2)+Math.pow(m.position(1)-this.position(1),2));
   }
 
   def heal(): String = {

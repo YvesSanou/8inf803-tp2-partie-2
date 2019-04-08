@@ -76,21 +76,22 @@ class Program extends Serializable {
     for (i <- 0 until monsters.size) {
       var temp = monsters(i);
       if (!item._1.name.equals(temp.name)) {
-        var pA = new Point(item._1.position(0), item._1.position(1));
+        /*var pA = new Point(item._1.position(0), item._1.position(1));
         var pB = new Point(temp.position(0), temp.position(1));
-        var distance=pA.distance(pB);
+        var distance=pA.distance(pB);*/
+        var distance=item._1.calculateDistance(temp);
         if(item._1.faction==temp.faction)
           {
             if (distanceAlly > distance) {
               closestAlly = temp;
-              distanceAlly = pA.distance(pB);
+              distanceAlly = distance;
             }
           }
         else
           {
             if (distanceFoe > distance) {
               closestFoe = temp;
-              distanceFoe = pA.distance(pB);
+              distanceFoe = distance;
             }
           }
 
@@ -122,7 +123,6 @@ class Program extends Serializable {
       var action = m._1;
       action match {
         case "attack" => {
-          monstre.takeHit();
           Console.println(m._2 + " attaque " + monstre.name);
           if (!monstre.alive)
             {
