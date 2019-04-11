@@ -1,3 +1,7 @@
+package Armes
+
+import Monstres.Monstre
+
 
 class Attaque(val _name:String, val _touch:Array[Int], val _damage: String, val _range:Int) extends Serializable {
 

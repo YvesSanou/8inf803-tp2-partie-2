@@ -2,6 +2,8 @@ import java.awt.Point
 import java.util
 import java.util.ArrayList
 
+import Armes.Attaque
+import Monstres._
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
@@ -18,30 +20,25 @@ class Program extends Serializable {
     while (boucle) {
       Console.println("Tour "+i)
       val monstersRDD = sc.parallelize(monsters)
-      val positions = monstersRDD.flatMap(m => sendPositions(m, monsters)).groupByKey().map(findClosest).collect()
-      val monstersRDD2 = monstersRDD.map(m => initializeGraph(m, positions))
-      var a=monstersRDD2.collect()
-      val messages = monstersRDD2.flatMap(m => sendMessages(m)).groupByKey()
+      val tab=sc.broadcast(monsters);
+      val messages = monstersRDD.flatMap(m => sendMessages(m)).groupByKey()
       if (messages.count() == 0)
         boucle = false
       else {
-        val newMonsters = messages.map(mess => processMessages(mess)).collect()
-        val monstersRDD3 = monstersRDD2.flatMap((m => updateGraph(m, newMonsters.toList)))
-        monsters = monstersRDD3.collect().toList
+        val newMonsters = messages.map(mess => processMessages(mess,monsters)).collect().toList
+        val monstersRDD2 = monstersRDD.flatMap(m=>updateGraph(m,newMonsters))
+        monsters = monstersRDD2.collect().toList
         i+=1
         var a = 0
       }
-
     }
-
     Console.println("Combat terminé")
-    Console.println("Vainqueur: "+monsters(0).name)
+    Console.println("Vainqueur: "+monsters(0))
 
-    var b = 0
   }
 
 
-  def initializeGraph(monstre: Monstre, positions: Array[(Monstre, (Monstre,Monstre))]): Monstre = {
+  /*def initializeGraph(monstre: Monstre, positions: Array[(Monstre, (Monstre,Monstre))]): Monstre = {
     for (i <- 0 until positions.size) {
       if (monstre.name.equals(positions(i)._1.name)) {
         monstre.closestFoe = positions(i)._2._1
@@ -98,57 +95,43 @@ class Program extends Serializable {
       }
     }
     (item._1,( closestFoe,closestAlly));
-  }
+  }*/
 
-  def sendMessages(monstre: Monstre): List[(Monstre, (String, String))] = {
-    var res=new ListBuffer[(Monstre, (String, String))];
-    var decision = monstre.intelligence();
-    var action = decision._2;
-    var emetteur = decision._1;
-    action match {
-      case "attack" => res.append((emetteur.closestFoe, ("attack", emetteur.name)))
-      case "moveToAttack" => res.append((emetteur, ("move", emetteur.closestFoe.name)))
-      case "moveToHeal" => res.append((emetteur, ("move", emetteur.closestAlly.name)))
-      case "heal" => {res.append((emetteur.closestAlly, ("heal", emetteur.name)));
-                      res.append((emetteur, ("potionUsed", "")))}
-      case "noAction"=>{}
-    }
+  def sendMessages(monstre: Monstre): List[(Int, (String, Monstre))] = {
+    var res=new ListBuffer[(Int, (String, Monstre))];
+    res.appendAll(monstre.intelligence());
     res.toList;
   }
 
-  def processMessages(item: (Monstre, Iterable[(String, String)])): Monstre = {
-    var monstre = item._1;
+  def processMessages(item: (Int, Iterable[(String, Monstre)]),monstres:List[Monstre]): Monstre = {
+    var monstre_id = item._1;
     var messages = item._2.toList;
+    var monstre: Monstre = null;
+    for (i <- 0 until monstres.size) {
+      if (monstre_id == monstres(i).id) {
+        monstre = monstres(i);
+      }
+    }
     for (m <- messages) {
-      var action = m._1;
+      val action = m._1;
       action match {
-        case "attack" => {
-          Console.println(m._2 + " attaque " + monstre.name);
-          if (!monstre.alive)
-            {
-            Console.println(monstre.name + " a ete tué");
-            }
+        case Messages.SEFAITATTAQUER => {
+          monstre = m._2.MeleeAttack(monstre);
         }
-        case "move" => {
-          var target:Monstre=null;
-          var text:String=null;
-          if(monstre.closestFoe.name.equals(m._2)) {
-            target = monstre.closestFoe;
-            text=" se deplace vers l'enemi ";
-          }
-          else {
-            target = monstre.closestAlly;
-            text=" se deplace vers l'allié "
-          }
-          //monstre.moveTo(target.position);
-          Console.println(monstre.name + text + m._2);
+        case Messages.SEFAITATTAQUERADISTANCE => {
+          monstre = m._2.RangeAttack(monstre);
         }
-        case "heal" => {
-          monstre.beHealed();
-          Console.println(monstre.name + " est soigné par " + m._2);
+        case Messages.REGENERATION => {
+          monstre.asInstanceOf[Solar].regeneration();
         }
-        case "potionUsed" => {
-          monstre.consumePotion();
+        case Messages.VOLER => {
+          monstre.asInstanceOf[Solar].voler();
+        }
+        case Messages.SEDEPLACERVERS => {
+          monstre.seDeplacerVers(m._2);
+        }
+        case Messages.SEDEPLACERVERS => {
+          monstre.seDeplacerVers(m._2);
         }
       }
     }
@@ -169,23 +152,38 @@ class Program extends Serializable {
   }
 
   def init(): List[Monstre] = {
-    var pos = new Array[Integer](2);
-    pos(0) = 10;
-    pos(1) = 5;
-    val m1 = new Monstre("m1",1,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
-    pos(0) = 0;
-    pos(1) = 5;
-    val m2 = new Monstre("m2",1,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
-    pos(0) = 0;
-    pos(1) = 10;
-    val m3 = new Monstre("m3",2,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
-    pos(0) = 20;
-    pos(1) = 10;
-    val m4 = new Monstre("m4",2,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
-    pos(0) = 20;
-    pos(1) = 15;
-    val m5 = new Monstre("m5",2,Array(new Attaque("greatSword", Array(35, 30, 25, 20), "3d6+18", 10)))
-    val result = Array(m1, m2, m3,m4,m5);
+    var result=new ListBuffer[Monstre];
+    var id_count=0;
+    val solar = new Solar(id_count);
+    id_count+=1;
+    var worgRiders=new ListBuffer[Monstre];
+    for(i<-0 until 8)
+      {
+        var m=new WorgRider(id_count);
+        m.setEnemy(solar);
+        worgRiders.append(m);
+        id_count+=1;
+      }
+    var barbares=new ListBuffer[Monstre];
+    for(i<-0 until 3)
+    {
+      var m=new Barbare(id_count);
+      m.setEnemy(solar);
+      barbares.append(m);
+      id_count+=1;
+    }
+    var warlord=new BrutalWarlord(id_count);
+
+    var enemies=new ListBuffer[Monstre];
+    enemies.append(warlord);
+    enemies.appendAll(worgRiders);
+    enemies.appendAll(barbares);
+    solar.setEnemies(enemies.toList);
+
+    result.append(solar);
+    result.appendAll(worgRiders);
+    result.appendAll(barbares);
+    result.append(warlord);
     result.toList;
   }
 }
