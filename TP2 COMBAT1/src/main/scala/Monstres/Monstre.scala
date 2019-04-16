@@ -20,6 +20,7 @@ abstract class Monstre(idval: Int, nameval: String, hpval: Int, armorval: Int, w
   var position = generateRandomPosition();
 
 
+
   /*****************************MESSAGES *************************************************************************/
   def seDeplacerVersMessage(monstre: Monstre): (Int, (String, Monstre)) = {
     Console.println(name + "se deplace vers");

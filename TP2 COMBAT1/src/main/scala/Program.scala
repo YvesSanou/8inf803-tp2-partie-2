@@ -3,6 +3,8 @@ import java.util
 import java.util.ArrayList
 
 import Armes.Attaque
+import scala.collection.JavaConverters._
+
 import Monstres._
 import org.apache.spark.{SparkConf, SparkContext}
 
@@ -28,6 +30,12 @@ class Program extends Serializable {
         val newMonsters = messages.map(mess => processMessages(mess,monsters)).collect().toList
         val monstersRDD2 = monstersRDD.flatMap(m=>updateGraph(m,newMonsters))
         monsters = monstersRDD2.collect().toList
+        Ui.Instance().printMonsters(null)
+        monsters.foreach{u =>
+          Ui.Instance().printMonsters(u);
+
+        }
+
         i+=1
         var a = 0
       }
