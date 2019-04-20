@@ -1,11 +1,11 @@
 import java.awt.Point
 import java.util
 import java.util.ArrayList
-
 import Armes.Attaque
 import scala.collection.JavaConverters._
 
 import Monstres._
+import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.{SparkConf, SparkContext}
 
 import scala.collection.mutable.ListBuffer
@@ -19,49 +19,49 @@ class Program extends Serializable {
     var monsters = init()
     var boucle = true
     var i=1
+    var monstersRDD = sc.parallelize(monsters);
     while (boucle) {
       Console.println("Tour "+i)
-      val monstersRDD = sc.parallelize(monsters)
-      val tab=sc.broadcast(monsters);
+      var tab=sc.broadcast(monsters);
+      monstersRDD=monstersRDD.map(m=>initializeGraph(m,tab))
       val messages = monstersRDD.flatMap(m => sendMessages(m)).groupByKey()
       if (messages.count() == 0)
         boucle = false
       else {
-        val newMonsters = messages.map(mess => processMessages(mess,monsters)).collect().toList
-        val monstersRDD2 = monstersRDD.flatMap(m=>updateGraph(m,newMonsters))
-        monsters = monstersRDD2.collect().toList
+        val newMonsters = messages.map(mess => processMessages(mess,tab)).collect().toList
+         monstersRDD = monstersRDD.flatMap(m=>updateGraph(m,newMonsters))
         Ui.Instance().printMonsters(null)
         monsters.foreach{u =>
           Ui.Instance().printMonsters(u);
-
         }
-
         i+=1
-        var a = 0
       }
     }
     Console.println("Combat terminé")
-    Console.println("Vainqueur: "+monsters(0))
+    Console.println("Vainqueur: "+monsters(0).name)
 
   }
 
 
-  /*def initializeGraph(monstre: Monstre, positions: Array[(Monstre, (Monstre,Monstre))]): Monstre = {
-    for (i <- 0 until positions.size) {
-      if (monstre.name.equals(positions(i)._1.name)) {
-        monstre.closestFoe = positions(i)._2._1
-        monstre.closestAlly=positions(i)._2._2
-      }
-    }
-    if(positions.size==0)
+  def initializeGraph(monstre: Monstre, tab: Broadcast[List[Monstre]]): Monstre = {
+    var e=new ListBuffer[Monstre];
+    var a=new ListBuffer[Monstre];
+    for(m<-tab.value)
       {
-        monstre.closestFoe=null
-        monstre.closestAlly=null
+        if(m.alive && monstre.id!=m.id)
+          {
+            if(monstre.faction==m.faction)
+              a.append(m);
+            else
+              e.append(m);
+          }
       }
-    monstre
+    monstre.setAllies(a.toList);
+    monstre.setEnemies(e.toList);
+    monstre;
   }
 
-  def sendPositions(monstre: Monstre, monstres: List[Monstre]): List[(Monstre, Monstre)] = {
+  /*def sendPositions(monstre: Monstre, monstres: List[Monstre]): List[(Monstre, Monstre)] = {
     var result = new ListBuffer[(Monstre, Monstre)]
     for (m <- monstres) {
       if (!m.name.equals(monstre.name)) {
@@ -111,7 +111,8 @@ class Program extends Serializable {
     res.toList;
   }
 
-  def processMessages(item: (Int, Iterable[(String, Monstre)]),monstres:List[Monstre]): Monstre = {
+  def processMessages(item: (Int, Iterable[(String, Monstre)]),tab:Broadcast[List[Monstre]]): Monstre = {
+    var monstres=tab.value;
     var monstre_id = item._1;
     var messages = item._2.toList;
     var monstre: Monstre = null;
@@ -124,19 +125,20 @@ class Program extends Serializable {
       val action = m._1;
       action match {
         case Messages.SEFAITATTAQUER => {
-          monstre = m._2.MeleeAttack(monstre);
+          if(monstre.alive) {
+            monstre = m._2.MeleeAttack(monstre);
+          }
         }
         case Messages.SEFAITATTAQUERADISTANCE => {
-          monstre = m._2.RangeAttack(monstre);
+          if(monstre.alive) {
+            monstre = m._2.RangeAttack(monstre);
+          }
         }
         case Messages.REGENERATION => {
           monstre.asInstanceOf[Solar].regeneration();
         }
         case Messages.VOLER => {
           monstre.asInstanceOf[Solar].voler();
-        }
-        case Messages.SEDEPLACERVERS => {
-          monstre.seDeplacerVers(m._2);
         }
         case Messages.SEDEPLACERVERS => {
           monstre.seDeplacerVers(m._2);
@@ -162,32 +164,23 @@ class Program extends Serializable {
   def init(): List[Monstre] = {
     var result=new ListBuffer[Monstre];
     var id_count=0;
-    val solar = new Solar(id_count);
+    val solar = new Solar(id_count,1,"Solar");
     id_count+=1;
     var worgRiders=new ListBuffer[Monstre];
     for(i<-0 until 8)
       {
-        var m=new WorgRider(id_count);
-        m.setEnemy(solar);
+        var m=new WorgRider(id_count,2,"Worg Rider "+(i+1));
         worgRiders.append(m);
         id_count+=1;
       }
     var barbares=new ListBuffer[Monstre];
     for(i<-0 until 3)
     {
-      var m=new Barbare(id_count);
-      m.setEnemy(solar);
+      var m=new Barbare(id_count,2,"Barbare "+(i+1));
       barbares.append(m);
       id_count+=1;
     }
-    var warlord=new BrutalWarlord(id_count);
-
-    var enemies=new ListBuffer[Monstre];
-    enemies.append(warlord);
-    enemies.appendAll(worgRiders);
-    enemies.appendAll(barbares);
-    solar.setEnemies(enemies.toList);
-
+    var warlord=new BrutalWarlord(id_count,2,"Brutal Warlord");
     result.append(solar);
     result.appendAll(worgRiders);
     result.appendAll(barbares);

@@ -6,23 +6,17 @@ import Armes.{Arc, Attaque, GreatSword}
 
 import scala.collection.mutable.ListBuffer
 
-class Solar(id: Int) extends Monstre(id, "Solar", 363, 44, 50, new GreatSword(), new Arc()) {
+class Solar(id: Int,faction:Int,name:String) extends Monstre(id, faction,name, 363, 44, 50, new GreatSword(), new Arc()) {
 
   val fly_speed = 150;
   val regen = 15;
   val actionsPerTour = 2;
   val surroundedCount = 3;
-  val choice = 0.6
-  var enemies: List[Monstre]=null
-
-
-  def setEnemies(monstres:List[Monstre]):Unit={
-    enemies=monstres;
-  }
+  val choice = 0.6;
 
 
   def volerMessage(): (Int, (String, Monstre)) = {
-    Console.println(name + "s'envole");
+    Console.println(name + " s'envole");
     return (this.id, (Messages.VOLER, null));
   }
 
@@ -33,34 +27,36 @@ class Solar(id: Int) extends Monstre(id, "Solar", 363, 44, 50, new GreatSword(),
 
   override def intelligence(): List[(Int, (String, Monstre))] = {
     var result = new ListBuffer[(Int, (String, Monstre))];
-    if (surrounded()) {
-      result.append(volerMessage());
-    }
-    else {
-      var target: Monstre = null;
-      var monstres = meleeAttackPossible();
-      if (monstres.size != 0) {
-        target = chooseMonsterToAttack(monstres);
-        result.append(attaqueMeleeMessage(target));
+    if(enemies.size!=0) {
+      if (surrounded()) {
+        result.append(volerMessage());
       }
       else {
-        monstres = rangeAttackPossible();
+        var target: Monstre = null;
+        var monstres = meleeAttackPossible();
         if (monstres.size != 0) {
-          var rand = new Random().nextDouble();
-          if (rand > choice) {
-            target = chooseMonsterToAttack(monstres);
-            result.append(attaqueDistanceMessage(target));
+          target = chooseMonsterToAttack(monstres);
+          result.append(attaqueMeleeMessage(target));
+        }
+        else {
+          monstres = rangeAttackPossible();
+          if (monstres.size != 0) {
+            var rand = new Random().nextDouble();
+            if (rand > choice) {
+              target = chooseMonsterToAttack(monstres);
+              result.append(attaqueDistanceMessage(target));
+            }
+            else {
+              target = closest(this.enemies);
+              result.append(seDeplacerVersMessage(target));
+            }
           }
           else {
             target = closest(this.enemies);
             result.append(seDeplacerVersMessage(target));
           }
-        }
-        else {
-          target = closest(this.enemies);
-          result.append(seDeplacerVersMessage(target));
-        }
 
+        }
       }
     }
     return result.toList;

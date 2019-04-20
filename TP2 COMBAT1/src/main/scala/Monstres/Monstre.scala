@@ -8,27 +8,30 @@ import Armes.{Attaque, GreatSword}
 import scala.math.pow
 import scala.util.Random
 
-abstract class Monstre(idval: Int, nameval: String, hpval: Int, armorval: Int, walk_speedval: Int, meleeval: Attaque,rangeval:Attaque) extends Serializable {
+abstract class Monstre(idval: Int,factionval:Int, nameval: String, hpval: Int, armorval: Int, walk_speedval: Int, meleeval: Attaque,rangeval:Attaque) extends Serializable {
   val id = idval;
   val name = nameval;
   var hp = hpval;
+  val faction=factionval;
   var armor = armorval;
   val melee = meleeval;
   val range=rangeval;
   val walk_speed = walk_speedval;
   var alive = true;
   var position = generateRandomPosition();
+  var allies:List[Monstre]=null;
+  var enemies:List[Monstre]=null;
 
 
 
   /*****************************MESSAGES *************************************************************************/
   def seDeplacerVersMessage(monstre: Monstre): (Int, (String, Monstre)) = {
-    Console.println(name + "se deplace vers");
+    Console.println(name + " se deplace vers "+monstre.name);
     return (this.id, (Messages.SEDEPLACERVERS, monstre));
   }
 
   def attaqueMeleeMessage(monstre: Monstre): (Int, (String, Monstre)) = {
-    Console.println(this.name + " attaque  " + monstre.name);
+    Console.println(this.name + " attaque " + monstre.name);
     return (monstre.id, (Messages.SEFAITATTAQUER, this));
   }
 
@@ -46,6 +49,7 @@ abstract class Monstre(idval: Int, nameval: String, hpval: Int, armorval: Int, w
     hp -= degats;
     if (hp <= 0) {
       alive = false;
+      println(name+" est mort");
     }
   }
 
@@ -84,6 +88,16 @@ abstract class Monstre(idval: Int, nameval: String, hpval: Int, armorval: Int, w
     moveTowards(monstre,walk_speed);
   }
 
+  def setEnemies(e:List[Monstre]): Unit =
+  {
+    enemies=e;
+  }
+
+  def setAllies(a:List[Monstre]): Unit =
+  {
+    allies=a;
+  }
+
   /**********************************************************************************************************/
 
 
@@ -117,10 +131,11 @@ abstract class Monstre(idval: Int, nameval: String, hpval: Int, armorval: Int, w
   }
 
   def move(speed: Int): Unit = {
-    /*val d = calculateDistance(p)
+    val p=generateRandomPosition();
+    val d = calculateDistance(p);
 
-    val cosTeta = (p.position(0) - position(0)) / d
-    val sinTeta = (p.position(1) - position(1)) / d
+    val cosTeta = (p(0) - position(0)) / d
+    val sinTeta = (p(1) - position(1)) / d
 
     if (d - speed < 5) {
       val newSpeed = d - 5
@@ -131,12 +146,16 @@ abstract class Monstre(idval: Int, nameval: String, hpval: Int, armorval: Int, w
       position(0) += speed * cosTeta;
       position(1) += speed * sinTeta;
     }
-    this*/
   }
 
   def calculateDistance(m: Monstre): Double = {
     return Math.sqrt(Math.pow(m.position(0) - this.position(0), 2) + Math.pow(m.position(1) - this.position(1), 2));
   }
+
+  def calculateDistance(p: Array[Double]): Double = {
+    return Math.sqrt(Math.pow(p(0) - this.position(0), 2) + Math.pow(p(1) - this.position(1), 2));
+  }
+
 
   def closest(monsters: List[Monstre]): Monstre = {
     var result = monsters(0);
